@@ -38,6 +38,7 @@ import com.futo.fcast.receiver.models.EventType
 import com.futo.fcast.receiver.models.FCastNetworkConfig
 import com.futo.fcast.receiver.models.FCastService
 import com.futo.fcast.receiver.models.MainActivityViewModel
+import com.futo.fcast.receiver.models.PlayMessage
 import com.futo.fcast.receiver.models.UpdateState
 import com.futo.fcast.receiver.views.MainActivity
 import com.google.zxing.BarcodeFormat
@@ -116,6 +117,28 @@ class MainActivity : AppCompatActivity() {
         }
 
         requestSystemAlertWindowPermission()
+
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        val data = intent.data
+        if (data != null && data.scheme == "fcast" && data.host == "play") {
+            val url = data.getQueryParameter("url")
+            if (url != null) {
+                val container = when {
+                    url.endsWith(".m3u8") -> "application/x-mpegurl"
+                    url.endsWith(".mpd") -> "application/dash+xml"
+                    else -> "video/mp4"
+                }
+                NetworkService.instance?.onPlay(PlayMessage(container = container, url = url))
+            }
+        }
     }
 
     override fun onPause() {
